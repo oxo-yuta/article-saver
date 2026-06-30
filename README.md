@@ -1,13 +1,13 @@
 # Article → Obsidian Saver
 
-**X**（Articles / 長尺記事）と **note** の記事ページを、本文Markdown＋画像実体としてObsidian Vaultに保存するChrome拡張機能です。
+**X**（Articles / 長尺記事）・**note**・**任意のWebページ**を、本文Markdown＋画像実体としてObsidian Vaultに保存するChrome拡張機能です。
 
-- 記事ページを自動検知し、画面右下に「**Obsidianに保存**」ボタンを表示
-- 拡張機能アイコンのポップアップからも保存可能
-- 本文をMarkdown化（フロントマター付き／見出し・段落・引用・リスト・コード・画像の順序を保持）
+- X / note の記事ページを自動検知し、画面右下に「**Obsidianに保存**」ボタンを表示
+- それ以外の一般ページでも、拡張アイコンのポップアップから「**汎用モード**」で保存可能（Mozilla Readability による本文抽出）
+- 本文をMarkdown化（フロントマター付き／見出し・段落・引用・リスト・コード・表・画像の順序を保持）
 - 本文画像を**最高画質でダウンロード**し、Obsidianの添付フォルダに保存
 - Markdownからは `![[...]]`（Wikilink埋め込み）で画像を参照
-- 保存元に応じて `x-article` / `note-article` タグを自動付与
+- 保存元に応じて `x-article` / `note-article` / `web-clip` タグを自動付与
 
 ---
 
@@ -101,6 +101,16 @@ ONのままだと保存のたびに保存ダイアログが出ます。
 2. 画面右下の「**Obsidianに保存**」ボタン、または拡張アイコン → 「Obsidianに保存」をクリック
 3. 完了通知が出れば成功。Vaultの `Clippings/` にノート、`Clippings/attachments/` に画像が保存されます
 
+### 汎用モード（X / note 以外の一般ページ）
+
+専用対応していないサイトでも、拡張アイコンのポップアップから保存できます。
+
+1. 保存したいページを開く
+2. 拡張アイコンをクリック → 「**このページを保存**」をクリック
+3. [Mozilla Readability](https://github.com/mozilla/readability) がページ本文を抽出し、Markdown化して保存します（タグ `web-clip` が付与されます）
+
+> 汎用モードは、その場で必要なときだけページに処理を注入する方式（`activeTab`）です。常時すべてのサイトを監視する権限は要求しません。抽出精度はサイト構造により変動します（リーダービューで読めるページが目安）。
+
 保存されるMarkdownの例:
 
 ```markdown
@@ -130,16 +140,19 @@ tags:
 article-saver/
 ├── manifest.json            # MV3マニフェスト
 ├── src/
-│   ├── background.js        # 画像fetch・ダウンロード保存（Service Worker）
+│   ├── background.js        # 画像fetch・ダウンロード保存・汎用注入（Service Worker）
 │   ├── content/
-│   │   ├── content.js       # 記事検知・ボタン注入・抽出/Markdown化の起点
-│   │   └── content.css      # 注入ボタンのスタイル
+│   │   ├── content.js        # X/note の記事検知・ボタン注入・抽出/Markdown化の起点
+│   │   ├── inject-generic.js # 汎用モードで対象タブに動的注入される保存処理
+│   │   └── content.css       # 注入ボタンのスタイル
 │   ├── lib/
-│   │   ├── extractor.js      # サイト振り分けディスパッチャ（ホスト名で X/note を選択）
-│   │   ├── extractor-x.js    # X の DOM → 構造化データ
-│   │   ├── extractor-note.js # note の DOM → 構造化データ
-│   │   ├── markdown.js       # 構造化データ → Markdown
-│   │   └── filename.js       # スラッグ/日付/パスのユーティリティ
+│   │   ├── extractor.js         # サイト振り分けディスパッチャ（X/note/汎用を選択）
+│   │   ├── extractor-x.js       # X の DOM → 構造化データ
+│   │   ├── extractor-note.js    # note の DOM → 構造化データ
+│   │   ├── extractor-generic.js # 任意ページ（Readability）→ 構造化データ
+│   │   ├── markdown.js          # 構造化データ → Markdown
+│   │   └── filename.js          # スラッグ/日付/パスのユーティリティ
+│   ├── vendor/              # 同梱サードパーティ（Mozilla Readability, Apache-2.0）
 │   ├── popup/               # アイコンクリック時のポップアップ
 │   └── options/             # 設定画面
 └── icons/
@@ -166,5 +179,6 @@ article-saver/
 
 ## 注意
 
-- 保存対象はXの「記事（Articles / 長尺記事）」と、noteの記事ページです。Xの通常のポストやスレッドは対象外です。
+- 専用対応はXの「記事（Articles / 長尺記事）」とnoteの記事ページです。その他のページは汎用モード（Readability）で保存できますが、抽出精度はサイト構造に依存します。
 - 個人利用を想定しています。保存したコンテンツの著作権は原著者に帰属します。
+- 本拡張は [Mozilla Readability](https://github.com/mozilla/readability)（Apache License 2.0）を同梱しています。ライセンス全文は `src/vendor/Readability-LICENSE` を参照してください。

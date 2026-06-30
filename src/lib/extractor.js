@@ -4,6 +4,10 @@
  * （ArticleSaverExtractorX / ArticleSaverExtractorNote）を選び、
  * 統一インターフェース ArticleSaverExtractor として公開する。
  *
+ * 専用サイトにマッチしない場合は、汎用フォールバック
+ * （ArticleSaverExtractorGeneric / Readability）が読み込まれていればそれを使う。
+ * generic は通常ページに常駐させず、popup から activeTab 権限で動的注入される。
+ *
  * content script からクラシックスクリプトとして読み込まれるため、
  * このファイルは extractor-x.js / extractor-note.js より後に読み込むこと。
  */
@@ -27,7 +31,7 @@
   ];
 
   /**
-   * 現在のホストに対応するサイト定義を返す。
+   * 現在のホストに対応する専用サイト定義を返す。
    * @returns {object|null}
    */
   function currentSite() {
@@ -36,21 +40,35 @@
   }
 
   /**
+   * 汎用フォールバック実装を返す（注入済みのときのみ）。
+   * @returns {object|null}
+   */
+  function genericImpl() {
+    return root.ArticleSaverExtractorGeneric || null;
+  }
+
+  /**
    * 現在のサイトの抽出実装を返す。
+   * 専用サイトを優先し、無ければ汎用フォールバックを返す。
    * @returns {object|null}
    */
   function impl() {
     const site = currentSite();
-    return site ? site.impl() || null : null;
+    if (site) {
+      const e = site.impl();
+      if (e) return e;
+    }
+    return genericImpl();
   }
 
   /**
-   * 現在のページのサイト識別子（'x' | 'note' | null）を返す。
+   * 現在のページのサイト識別子（'x' | 'note' | 'generic' | null）を返す。
    * @returns {string|null}
    */
   function siteKey() {
     const site = currentSite();
-    return site ? site.key : null;
+    if (site) return site.key;
+    return genericImpl() ? 'generic' : null;
   }
 
   /**

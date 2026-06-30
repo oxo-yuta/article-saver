@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Article → Obsidian Saver",
-  "version": "1.1.0",
-  "description": "X・noteの記事ページをMarkdownとしてObsidian Vaultに保存し、本文画像も実体ダウンロードします。",
+  "version": "1.2.0",
+  "description": "X・noteの記事や任意のWebページをMarkdownとしてObsidian Vaultに保存し、本文画像も実体ダウンロードします。",
   "permissions": ["downloads", "storage", "activeTab", "scripting", "notifications"],
   "host_permissions": [
     "https://x.com/*",

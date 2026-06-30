@@ -57,20 +57,28 @@ function download(options) {
 }
 
 /**
- * 1つの画像を fetch して保存する。
- * @param {{url:string, downloadPath:string}} image
+ * 1つの画像を保存する。
+ * - image.dataUrl があれば、それを直接ダウンロードする
+ *   （汎用版はページコンテキストで既にfetch済みなので、background側の
+ *    任意ホストfetchを避けられ、広範な host_permissions が不要になる）
+ * - 無ければ image.url を background から fetch する（専用サイト用）
+ * @param {{url?:string, dataUrl?:string, downloadPath:string}} image
  * @returns {Promise<boolean>} 成功したか
  */
 async function saveImage(image) {
-  if (!image.url) return false;
+  if (!image.downloadPath) return false;
   try {
-    const resp = await fetch(image.url, { credentials: 'omit' });
-    if (!resp.ok) {
-      console.error('[ArticleSaver] image fetch failed', resp.status, image.url);
-      return false;
+    let dataUrl = image.dataUrl;
+    if (!dataUrl) {
+      if (!image.url) return false;
+      const resp = await fetch(image.url, { credentials: 'omit' });
+      if (!resp.ok) {
+        console.error('[ArticleSaver] image fetch failed', resp.status, image.url);
+        return false;
+      }
+      const blob = await resp.blob();
+      dataUrl = await blobToDataUrl(blob);
     }
-    const blob = await resp.blob();
-    const dataUrl = await blobToDataUrl(blob);
     await download({
       url: dataUrl,
       filename: image.downloadPath,
@@ -140,10 +148,54 @@ function notify(title, message) {
   }
 }
 
-// ---- content からの保存ジョブを受信 ----
+// 汎用保存で対象タブへ順に注入するファイル群（順序が重要）
+const GENERIC_INJECT_FILES = [
+  'src/vendor/Readability.js',
+  'src/vendor/Readability-readerable.js',
+  'src/lib/filename.js',
+  'src/lib/extractor-generic.js',
+  'src/lib/markdown.js',
+  'src/content/inject-generic.js',
+];
+
+/**
+ * 未対応サイト向けの汎用保存。
+ * activeTab 権限で対象タブに Readability + 汎用extractor 一式を注入し、
+ * inject-generic.js が抽出〜画像fetch(ページ権限)〜SAVE_ARTICLE送信まで行う。
+ * その戻り値（保存結果）を呼び出し元に返す。
+ * @param {number} tabId
+ * @returns {Promise<object>}
+ */
+async function runGenericSave(tabId) {
+  if (!tabId) return { ok: false, error: 'no_tab' };
+  if (!chrome.scripting || !chrome.scripting.executeScript) {
+    return { ok: false, error: 'scripting_unavailable' };
+  }
+  try {
+    // Readability / lib / extractor を順に注入（最後の inject-generic 以外は戻り値を使わない）
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      files: GENERIC_INJECT_FILES,
+    });
+    // 最後に実行された inject-generic.js の戻り値（Promise解決値）が保存結果
+    const last = Array.isArray(results) ? results[results.length - 1] : null;
+    return (last && last.result) || { ok: false, error: 'no_result' };
+  } catch (e) {
+    console.error('[ArticleSaver] generic save failed', e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+// ---- content / popup からのメッセージを受信 ----
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === 'SAVE_ARTICLE') {
     runSaveJob(msg.job)
+      .then((res) => sendResponse(res))
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true; // 非同期応答
+  }
+  if (msg && msg.type === 'GENERIC_SAVE') {
+    runGenericSave(msg.tabId)
       .then((res) => sendResponse(res))
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true; // 非同期応答
