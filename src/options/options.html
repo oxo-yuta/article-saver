@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>X Article → Obsidian 設定</title>
+    <title>Article → Obsidian 設定</title>
     <style>
       :root {
         --accent: #5b5ef6;
-        --accent2: #7c3aee;
+        --accent-hover: #4a4dec;
         --text: #0f1419;
         --muted: #536471;
         --border: #d7dbe0;
@@ -109,13 +109,14 @@
         font-size: 14px;
         font-weight: 700;
         color: #fff;
-        background: linear-gradient(135deg, var(--accent2), var(--accent));
+        background: var(--accent);
         border: none;
         border-radius: 9px;
         cursor: pointer;
+        transition: background 0.12s ease;
       }
       button.save:hover {
-        opacity: 0.92;
+        background: var(--accent-hover);
       }
       #saved {
         font-size: 13px;
@@ -140,8 +141,8 @@
   </head>
   <body>
     <div class="wrap">
-      <h1>X Article → Obsidian 設定</h1>
-      <p class="lead">Xの記事をMarkdownとしてObsidian Vaultに保存します。</p>
+      <h1>Article → Obsidian 設定</h1>
+      <p class="lead">X・noteの記事をMarkdownとしてObsidian Vaultに保存します。</p>
 
       <div class="card">
         <div class="callout">
@@ -186,8 +187,11 @@
 
         <div class="field">
           <label for="tags">タグ（カンマ区切り）</label>
-          <input type="text" id="tags" placeholder="x-article, clipped" />
-          <p class="hint">フロントマターの tags に付与されます。</p>
+          <input type="text" id="tags" placeholder="clipped" />
+          <p class="hint">
+            フロントマターの tags に付与されます。これに加え、保存元に応じた
+            <code>x-article</code> / <code>note-article</code> が自動付与されます。
+          </p>
         </div>
 
         <div class="field">

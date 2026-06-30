@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>X Article → Obsidian</title>
+    <title>Article → Obsidian</title>
     <style>
       :root {
         --accent: #5b5ef6;
-        --accent2: #7c3aee;
+        --accent-hover: #4a4dec;
         --bg: #ffffff;
         --text: #0f1419;
         --muted: #536471;
@@ -26,7 +26,7 @@
       }
       header {
         padding: 14px 16px;
-        background: linear-gradient(135deg, var(--accent2), var(--accent));
+        background: var(--accent);
         color: #fff;
       }
       header h1 {
@@ -60,18 +60,18 @@
         font-size: 14px;
         font-weight: 700;
         color: #fff;
-        background: linear-gradient(135deg, var(--accent2), var(--accent));
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: var(--accent);
+        border: none;
         border-radius: 10px;
         cursor: pointer;
-        transition: opacity 0.12s ease;
+        transition: background 0.12s ease;
       }
       button.primary:disabled {
         opacity: 0.5;
         cursor: not-allowed;
       }
       button.primary:hover:not(:disabled) {
-        opacity: 0.92;
+        background: var(--accent-hover);
       }
       .footer {
         margin-top: 12px;
@@ -90,8 +90,8 @@
   </head>
   <body>
     <header>
-      <h1>X Article → Obsidian</h1>
-      <p>記事をMarkdownで保存します</p>
+      <h1>Article → Obsidian</h1>
+      <p>X・noteの記事をMarkdownで保存します</p>
     </header>
     <main>
       <p id="status">ページを確認中…</p>

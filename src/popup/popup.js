@@ -35,8 +35,8 @@
     activeTabId = tab.id;
 
     const url = tab.url || '';
-    if (!/^https:\/\/(x|twitter)\.com\//.test(url)) {
-      setStatus('Xのページではありません', 'error');
+    if (!/^https:\/\/((x|twitter)\.com|note\.com)\//.test(url)) {
+      setStatus('X・noteのページではありません', 'error');
       return;
     }
 

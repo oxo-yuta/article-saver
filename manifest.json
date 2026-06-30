@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "X Article → Obsidian Saver",
-  "version": "1.0.0",
-  "description": "Xの記事ページをMarkdownとしてObsidian Vaultに保存し、本文画像も実体ダウンロードします。",
+  "name": "Article → Obsidian Saver",
+  "version": "1.1.0",
+  "description": "X・noteの記事ページをMarkdownとしてObsidian Vaultに保存し、本文画像も実体ダウンロードします。",
   "permissions": ["downloads", "storage", "activeTab", "scripting", "notifications"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
-    "https://pbs.twimg.com/*"
+    "https://pbs.twimg.com/*",
+    "https://note.com/*",
+    "https://assets.st-note.com/*"
   ],
   "background": {
     "service_worker": "src/background.js",
@@ -15,9 +17,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "matches": ["https://x.com/*", "https://twitter.com/*", "https://note.com/*"],
       "js": [
         "src/lib/filename.js",
+        "src/lib/extractor-x.js",
+        "src/lib/extractor-note.js",
         "src/lib/extractor.js",
         "src/lib/markdown.js",
         "src/content/content.js"
@@ -28,7 +32,7 @@
   ],
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_title": "Xの記事をObsidianに保存",
+    "default_title": "記事をObsidianに保存",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

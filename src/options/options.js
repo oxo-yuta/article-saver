@@ -10,7 +10,7 @@
     noteSubDir: 'Clippings',
     attachmentSubDir: 'Clippings/attachments',
     filenamePattern: '{date}-{slug}',
-    tags: ['x-article'],
+    tags: ['clipped'],
   };
 
   const els = {

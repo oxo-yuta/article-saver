@@ -1,7 +1,7 @@
 /**
  * content.js
- * Xのページに常駐し、記事ページを検知して「Obsidianに保存」ボタンを注入する。
- * 保存実行時は extractor/markdown で記事を構造化・Markdown化し、
+ * X / note のページに常駐し、記事ページを検知して「Obsidianに保存」ボタンを注入する。
+ * 保存実行時は extractor(ディスパッチャ)/markdown で記事を構造化・Markdown化し、
  * background へ保存ジョブ(Markdown本文 + 画像URLリスト + 各パス)を送る。
  *
  * SPA遷移に追従するため MutationObserver で記事ビューの出現を監視する。
@@ -16,12 +16,14 @@
   const BUTTON_ID = 'obsidian-saver-button';
 
   // 既定設定（options未設定時のフォールバック）
+  // tags は保存元サイトのタグ(x-article / note-article)を buildJob 側で自動付与するため、
+  // ここでの既定は汎用の clipped のみとする。
   const DEFAULT_SETTINGS = {
     vaultDir: 'ObsidianVault',
     noteSubDir: 'Clippings',
     attachmentSubDir: 'Clippings/attachments',
     filenamePattern: '{date}-{slug}',
-    tags: ['x-article'],
+    tags: ['clipped'],
   };
 
   /**
@@ -73,9 +75,15 @@
       return wikilink;
     });
 
+    // 保存元サイトに応じたタグを自動付与（重複は排除）
+    const siteKey = Extractor.siteKey ? Extractor.siteKey() : null;
+    const siteTag = siteKey === 'note' ? 'note-article' : siteKey === 'x' ? 'x-article' : null;
+    const tags = Array.isArray(settings.tags) ? settings.tags.slice() : [];
+    if (siteTag && !tags.includes(siteTag)) tags.push(siteTag);
+
     const markdown = Markdown.buildMarkdown(article, {
       imageWikilinks: wikilinks,
-      tags: settings.tags || [],
+      tags,
       savedAt: dateStr,
     });
 

@@ -1,12 +1,13 @@
-# X Article → Obsidian Saver
+# Article → Obsidian Saver
 
-Xの記事（Articles / 長尺記事）ページを、本文Markdown＋画像実体としてObsidian Vaultに保存するChrome拡張機能です。
+**X**（Articles / 長尺記事）と **note** の記事ページを、本文Markdown＋画像実体としてObsidian Vaultに保存するChrome拡張機能です。
 
-- 記事ページを自動検知し、X画面右下に「**Obsidianに保存**」ボタンを表示
+- 記事ページを自動検知し、画面右下に「**Obsidianに保存**」ボタンを表示
 - 拡張機能アイコンのポップアップからも保存可能
-- 本文をMarkdown化（フロントマター付き／見出し・段落・引用・画像の順序を保持）
-- 本文画像を**最高画質（orig）でダウンロード**し、Obsidianの添付フォルダに保存
+- 本文をMarkdown化（フロントマター付き／見出し・段落・引用・リスト・コード・画像の順序を保持）
+- 本文画像を**最高画質でダウンロード**し、Obsidianの添付フォルダに保存
 - Markdownからは `![[...]]`（Wikilink埋め込み）で画像を参照
+- 保存元に応じて `x-article` / `note-article` タグを自動付与
 
 ---
 
@@ -77,7 +78,7 @@ ONのままだと保存のたびに保存ダイアログが出ます。
 | ノート保存サブフォルダ | `Clippings` | `.md` の保存先（Vault内） |
 | 添付サブフォルダ | `Clippings/attachments` | 画像の保存先（Vault内） |
 | ファイル名形式 | `{date}-{slug}` | `{date}` `{slug}` `{handle}` が使える |
-| タグ | `x-article` | フロントマターの `tags` |
+| タグ | `clipped` | フロントマターの `tags`。これに加え保存元の `x-article` / `note-article` が自動付与される |
 
 設定画面の「保存先プレビュー」で実際の保存パスを確認できます。
 
@@ -85,8 +86,9 @@ ONのままだと保存のたびに保存ダイアログが出ます。
 
 ## 使い方
 
-1. Xの記事ページを開く
-   （例: `https://x.com/<handle>/status/<id>`）
+1. 記事ページを開く
+   - X: `https://x.com/<handle>/status/<id>`（Articles / 長尺記事）
+   - note: `https://note.com/<urlname>/n/<id>`
 2. 画面右下の「**Obsidianに保存**」ボタン、または拡張アイコン → 「Obsidianに保存」をクリック
 3. 完了通知が出れば成功。Vaultの `Clippings/` にノート、`Clippings/attachments/` に画像が保存されます
 
@@ -124,16 +126,20 @@ article-saver/
 │   │   ├── content.js       # 記事検知・ボタン注入・抽出/Markdown化の起点
 │   │   └── content.css      # 注入ボタンのスタイル
 │   ├── lib/
-│   │   ├── extractor.js     # DOM → 構造化データ
-│   │   ├── markdown.js      # 構造化データ → Markdown
-│   │   └── filename.js      # スラッグ/日付/パスのユーティリティ
+│   │   ├── extractor.js      # サイト振り分けディスパッチャ（ホスト名で X/note を選択）
+│   │   ├── extractor-x.js    # X の DOM → 構造化データ
+│   │   ├── extractor-note.js # note の DOM → 構造化データ
+│   │   ├── markdown.js       # 構造化データ → Markdown
+│   │   └── filename.js       # スラッグ/日付/パスのユーティリティ
 │   ├── popup/               # アイコンクリック時のポップアップ
 │   └── options/             # 設定画面
 └── icons/
 ```
 
-記事ページの判定・本文抽出に使うセレクタ（`twitterArticleReadView` /
-`longformRichTextComponent` / `longform-*` クラスなど）は **`src/lib/extractor.js`** に集約しています。XのDOM変更で抽出が壊れた場合はここを修正してください。
+本文抽出のセレクタはサイトごとに分離しています。DOM変更で抽出が壊れた場合は、
+**X は `src/lib/extractor-x.js`**（`twitterArticleReadView` / `longform-*` など）、
+**note は `src/lib/extractor-note.js`**（`note-common-styles__textnote-body` など）を修正してください。
+新しいサイトを追加する場合は、新規 `extractor-<site>.js` を作り `extractor.js` の `SITES` に登録します。
 
 ---
 
@@ -143,13 +149,13 @@ article-saver/
 |---|---|
 | 保存のたびに保存ダイアログが出る | `chrome://settings/downloads` の「保存場所を確認する」をOFF |
 | Vaultに反映されない | `~/Downloads/<リンク名>` が正しくVaultを指しているか `ls -la` で確認 |
-| 「記事ページではありません」と出る | Xの記事（Articles）ページか確認。通常のポストでは動作しません |
+| 「記事ページではありません」と出る | Xは記事（Articles）ページか、noteは記事（`/n/`）ページか確認。Xの通常ポストでは動作しません |
 | 画像が保存されない | コンソール（拡張の「Service Worker」リンク）でfetchエラーを確認 |
-| ボタンが出ない | ページ更新。X側のDOM変更時は `extractor.js` のセレクタ更新が必要 |
+| ボタンが出ない | ページ更新。DOM変更時は X→`extractor-x.js` / note→`extractor-note.js` のセレクタ更新が必要 |
 
 ---
 
 ## 注意
 
-- 保存対象はXの「記事（Articles / 長尺記事）」です。通常のポストやスレッドは対象外です。
+- 保存対象はXの「記事（Articles / 長尺記事）」と、noteの記事ページです。Xの通常のポストやスレッドは対象外です。
 - 個人利用を想定しています。保存したコンテンツの著作権は原著者に帰属します。

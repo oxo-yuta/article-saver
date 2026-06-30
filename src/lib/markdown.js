@@ -125,6 +125,32 @@
           lines.push('');
           break;
         }
+        case 'caption':
+          flushListGap();
+          // 画像キャプションは引用ではなく控えめな強調(イタリック)で表現
+          lines.push(`*${block.text}*`);
+          lines.push('');
+          break;
+        case 'code': {
+          flushListGap();
+          const lang = block.lang || '';
+          lines.push('```' + lang);
+          lines.push(block.text);
+          lines.push('```');
+          lines.push('');
+          break;
+        }
+        case 'embed':
+          flushListGap();
+          // 埋め込み（note記事カード・外部ページ）はURLリンクとして残す
+          if (block.url) lines.push(`<${block.url}>`);
+          lines.push('');
+          break;
+        case 'hr':
+          flushListGap();
+          lines.push('---');
+          lines.push('');
+          break;
         case 'p':
         default:
           flushListGap();
