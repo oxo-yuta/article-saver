@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>X Article → Obsidian 設定</title>
+    <style>
+      :root {
+        --accent: #5b5ef6;
+        --accent2: #7c3aee;
+        --text: #0f1419;
+        --muted: #536471;
+        --border: #d7dbe0;
+        --bg: #f7f8fa;
+        --card: #ffffff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Hiragino Sans", Meiryo, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+      .wrap {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      .lead {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0 0 24px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .field {
+        margin-bottom: 18px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 4px 0 0;
+        line-height: 1.5;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 9px 11px;
+        font-size: 13px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      input[type="text"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(91, 94, 246, 0.15);
+      }
+      /* 注記ボックス: 角丸 + 全周ボーダー + 背景色（左罫は使わない） */
+      .callout {
+        background: #f3f0ff;
+        border: 1px solid #d9ccff;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: #4c1d95;
+      }
+      .callout strong {
+        color: #5b21b6;
+      }
+      .callout code {
+        background: #ffffff;
+        border: 1px solid #e3dcff;
+        border-radius: 5px;
+        padding: 1px 5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        word-break: break-all;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 24px;
+      }
+      button.save {
+        padding: 10px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent2), var(--accent));
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+      }
+      button.save:hover {
+        opacity: 0.92;
+      }
+      #saved {
+        font-size: 13px;
+        color: #15803d;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      #saved.show {
+        opacity: 1;
+      }
+      .preview {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: var(--muted);
+        background: #f0f2f5;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-top: 8px;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>X Article → Obsidian 設定</h1>
+      <p class="lead">Xの記事をMarkdownとしてObsidian Vaultに保存します。</p>
+
+      <div class="card">
+        <div class="callout">
+          <strong>はじめに（重要）：</strong> Chrome拡張はダウンロードフォルダの外へ直接保存できません。
+          初回に一度だけ、ターミナルで次のコマンドを実行し、ダウンロードフォルダ内に
+          Vaultへのシンボリックリンクを作成してください。<br /><br />
+          <code id="lnCmd">ln -s "/path/to/Vault" ~/Downloads/ObsidianVault</code>
+          <br /><br />
+          作成したリンク名（例 <code>ObsidianVault</code>）を下の「Vault相対パス」に入力します。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label for="vaultDir">Vault相対パス（リンク名）</label>
+          <input type="text" id="vaultDir" placeholder="ObsidianVault" />
+          <p class="hint">
+            ダウンロードフォルダ起点でのVaultルート。上で作成したシンボリックリンクの名前。
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="noteSubDir">ノート保存サブフォルダ</label>
+          <input type="text" id="noteSubDir" placeholder="Clippings" />
+          <p class="hint">.md ファイルの保存先（Vault内の相対パス）。</p>
+        </div>
+
+        <div class="field">
+          <label for="attachmentSubDir">添付（画像）サブフォルダ</label>
+          <input type="text" id="attachmentSubDir" placeholder="Clippings/attachments" />
+          <p class="hint">本文画像の保存先（Vault内の相対パス）。</p>
+        </div>
+
+        <div class="field">
+          <label for="filenamePattern">ファイル名形式</label>
+          <input type="text" id="filenamePattern" placeholder="{date}-{slug}" />
+          <p class="hint">
+            使える変数: <code>{date}</code>（保存日 YYYY-MM-DD）、
+            <code>{slug}</code>（記事タイトル）、<code>{handle}</code>（投稿者）。
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="tags">タグ（カンマ区切り）</label>
+          <input type="text" id="tags" placeholder="x-article, clipped" />
+          <p class="hint">フロントマターの tags に付与されます。</p>
+        </div>
+
+        <div class="field">
+          <label>保存先プレビュー</label>
+          <div class="preview" id="preview"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="save" id="saveBtn">保存</button>
+        <span id="saved">✓ 保存しました</span>
+      </div>
+    </div>
+    <script src="options.js"></script>
+  </body>
+</html>

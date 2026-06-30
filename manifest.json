@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "X Article → Obsidian Saver",
+  "version": "1.0.0",
+  "description": "Xの記事ページをMarkdownとしてObsidian Vaultに保存し、本文画像も実体ダウンロードします。",
+  "permissions": ["downloads", "storage", "activeTab", "scripting", "notifications"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://pbs.twimg.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": [
+        "src/lib/filename.js",
+        "src/lib/extractor.js",
+        "src/lib/markdown.js",
+        "src/content/content.js"
+      ],
+      "css": ["src/content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Xの記事をObsidianに保存",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "src/options/options.html"
+}
