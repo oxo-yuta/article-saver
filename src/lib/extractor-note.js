@@ -239,15 +239,62 @@
   }
 
   /**
+   * 要素群の class から言語名を推定する。
+   * 対応する記法:
+   *   - language-xxx / lang-xxx（Prism等の業界標準）
+   *   - "hljs xxx"（highlight.js。noteはこの形式 例 "hljs python"）
+   * highlight.js が付ける装飾系クラス(hljs等)は言語名から除外する。
+   * @param {...Element} els
+   * @returns {string} 言語名（無ければ ''）
+   */
+  function detectCodeLang(...els) {
+    // hljsが言語名以外に付ける可能性のあるクラス（言語候補から除外）
+    const IGNORE = new Set(['hljs', 'code', 'highlight', 'prettyprint']);
+    for (const el of els) {
+      if (!el) continue;
+      const cls = (el.className || '').toString();
+      // 1) language-xxx / lang-xxx
+      const m = cls.match(/(?:language|lang)-([\w+#-]+)/i);
+      if (m) return m[1].toLowerCase();
+      // 2) "hljs xxx" 形式: hljs を含むときだけ、残りのトークンを言語名とみなす
+      const tokens = cls.split(/\s+/).filter(Boolean);
+      if (tokens.includes('hljs')) {
+        const lang = tokens.find((t) => !IGNORE.has(t.toLowerCase()));
+        if (lang) return lang.toLowerCase();
+      }
+    }
+    return '';
+  }
+
+  /**
    * コードブロック（div.code-block-container > pre）を変換する。
    * @param {Element} container
    * @param {Array} blocks
    */
   function processCodeBlock(container, blocks) {
     const pre = container.querySelector('pre');
+    const codeEl = (pre || container).querySelector('code');
     const code = pre ? pre.textContent : container.textContent;
     const text = (code || '').replace(/\n+$/, '');
-    if (text.trim()) blocks.push({ type: 'code', text });
+    if (!text.trim()) return;
+    const lang = detectCodeLang(codeEl, pre, container);
+    blocks.push({ type: 'code', text, lang });
+  }
+
+  /**
+   * テーブル（<table>）をGFMテーブル用の行データに変換する。
+   * @param {Element} table
+   * @param {Array} blocks
+   */
+  function processTable(table, blocks) {
+    const rows = [];
+    for (const tr of table.querySelectorAll('tr')) {
+      const cells = Array.from(tr.querySelectorAll('th, td')).map((c) =>
+        clean(inlineText(c))
+      );
+      if (cells.length) rows.push(cells);
+    }
+    if (rows.length) blocks.push({ type: 'table', rows });
   }
 
   /**
@@ -300,6 +347,12 @@
     // figure（画像 / 埋め込み / 引用）
     if (tag === 'figure') {
       processFigure(el, blocks, images, seenImageKeys);
+      return;
+    }
+
+    // テーブル
+    if (tag === 'table') {
+      processTable(el, blocks);
       return;
     }
 

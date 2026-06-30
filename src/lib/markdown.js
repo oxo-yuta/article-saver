@@ -140,6 +140,32 @@
           lines.push('');
           break;
         }
+        case 'table': {
+          flushListGap();
+          const rows = Array.isArray(block.rows) ? block.rows : [];
+          if (rows.length) {
+            const cols = Math.max(...rows.map((r) => r.length));
+            // セル内の | と改行はGFMテーブルを壊すのでエスケープ/置換する
+            const cell = (v) =>
+              String(v == null ? '' : v)
+                .replace(/\|/g, '\\|')
+                .replace(/\r?\n/g, '<br>')
+                .trim();
+            const pad = (r) => {
+              const c = r.slice(0, cols);
+              while (c.length < cols) c.push('');
+              return c.map(cell);
+            };
+            const header = pad(rows[0]);
+            lines.push(`| ${header.join(' | ')} |`);
+            lines.push(`| ${header.map(() => '---').join(' | ')} |`);
+            for (const r of rows.slice(1)) {
+              lines.push(`| ${pad(r).join(' | ')} |`);
+            }
+            lines.push('');
+          }
+          break;
+        }
         case 'embed':
           flushListGap();
           // 埋め込み（note記事カード・外部ページ）はURLリンクとして残す
