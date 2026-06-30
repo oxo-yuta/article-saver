@@ -8,6 +8,12 @@ Xの記事（Articles / 長尺記事）ページを、本文Markdown＋画像実
 - 本文画像を**最高画質（orig）でダウンロード**し、Obsidianの添付フォルダに保存
 - Markdownからは `![[...]]`（Wikilink埋め込み）で画像を参照
 
+<p>
+  <a href="https://www.buymeacoffee.com/spadelovesa" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" width="210">
+  </a>
+</p>
+
 ---
 
 ## 仕組みと前提（重要）
@@ -143,13 +149,3 @@ article-saver/
 
 - 保存対象はXの「記事（Articles / 長尺記事）」です。通常のポストやスレッドは対象外です。
 - 個人利用を想定しています。保存したコンテンツの著作権は原著者に帰属します。
-
----
-
-## Support
-
-このツールが役に立ったら、ぜひコーヒーで応援してもらえると嬉しいです ☕
-
-<a href="https://www.buymeacoffee.com/spadelovesa" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" width="210">
-</a>
