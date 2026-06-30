@@ -62,6 +62,15 @@ ls -la ~/Downloads/ObsidianVault/   # Vaultの中身が見えればOK
 3. 「**パッケージ化されていない拡張機能を読み込む**」をクリック
 4. このフォルダ（`article-saver`）を選択
 
+> **拡張を更新するとき:** 最新版を取得してから、Chromeで再読み込みします。
+>
+> ```bash
+> cd /path/to/article-saver
+> git pull
+> ```
+>
+> その後 `chrome://extensions` を開き、本拡張のカード右下にある**再読み込みアイコン（⟳）**をクリックすれば反映されます（Chromeの再起動は不要）。設定（Vault相対パスやタグ）は保持されます。
+
 ### 3. Chromeのダウンロード設定を確認
 
 `chrome://settings/downloads` で
