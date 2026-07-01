@@ -183,8 +183,44 @@
     return '';
   }
 
+  // 明らかにコンテンツ画像でないもの（アイコン/SNSボタン/アバター/計測画素等）。
+  // 誤検知を避けるため、区切り文字(先頭/末尾/ - _ . /)で囲まれた語としてのみ一致させる。
+  // （例: "shared" を "share" で誤爆しない）
+  const NOISE_TOKENS = [
+    'avatar', 'icon', 'icons', 'logo', 'emoji', 'sprite', 'spacer', 'blank',
+    'pixel', '1x1', 'badge', 'share', 'sns', 'hatena', 'feedly', 'rss',
+    'banner', 'tracking', 'beacon', 'gravatar',
+  ];
+  const NOISE_URL_RE = new RegExp(
+    '(?:^|[/_.-])(' + NOISE_TOKENS.join('|') + ')(?:$|[/_.-])',
+    'i'
+  );
+
   /**
-   * 画像要素から保存対象の画像を取り出す。
+   * 画像がコンテンツとして保存する価値が無いノイズか判定する。
+   * @param {Element} img
+   * @param {string} url
+   * @returns {boolean}
+   */
+  function isNoiseImage(img, url) {
+    // クエリを除いたパス部分だけで判定（クエリ内の無関係な語を誤爆しない）
+    let path = url;
+    try {
+      path = new URL(url, location.href).pathname;
+    } catch (e) {
+      /* URLでなければそのまま */
+    }
+    if (NOISE_URL_RE.test(path)) return true;
+    // width/height 属性が明示的に小さいものはアイコン類とみなす
+    const w = parseInt(img.getAttribute('width') || '', 10);
+    const h = parseInt(img.getAttribute('height') || '', 10);
+    if (w && w < 80) return true;
+    if (h && h < 80) return true;
+    return false;
+  }
+
+  /**
+   * 画像要素から保存対象の画像を取り出す。ノイズ画像は除外する。
    * @param {Element} img
    * @param {Array} images
    * @param {Set} seen
@@ -196,10 +232,12 @@
       img.getAttribute('src') ||
       img.getAttribute('data-src') ||
       img.getAttribute('data-original') ||
+      img.getAttribute('data-lazy-src') ||
       '';
     const url = absoluteUrl(raw, location.href);
     if (!url || /^data:/.test(url)) return null;
     if (seen.has(url)) return null;
+    if (isNoiseImage(img, url)) return null;
     seen.add(url);
     const idx = images.length;
     images.push({ id: url, url, alt: img.getAttribute('alt') || '' });
@@ -373,6 +411,44 @@
   }
 
   /**
+   * og:image / twitter:image からアイキャッチ画像URLを取得する。
+   * @returns {string} 絶対URL（無ければ ''）
+   */
+  function getLeadImageUrl() {
+    const sel = [
+      'meta[property="og:image:secure_url"]',
+      'meta[property="og:image"]',
+      'meta[name="twitter:image"]',
+      'meta[name="twitter:image:src"]',
+    ];
+    for (const s of sel) {
+      const m = document.querySelector(s);
+      const c = m && (m.getAttribute('content') || '');
+      if (c) return absoluteUrl(c, location.href);
+    }
+    return '';
+  }
+
+  /**
+   * 元ページの本文コンテナを推定する（Readabilityが画像を落とした際の補完元）。
+   * @returns {Element|null}
+   */
+  function findContentContainer() {
+    const article = document.querySelector('article');
+    const scope = article || document.querySelector('main') || document.body;
+    // 段落を多く含む子孫を本文とみなす
+    const candidates = Array.from(scope.querySelectorAll('div, section, article')).filter(
+      (el) => el.querySelectorAll(':scope > p').length >= 3
+    );
+    if (!candidates.length) return article || scope;
+    return candidates.sort(
+      (a, b) =>
+        b.querySelectorAll(':scope > p, :scope > figure, :scope img').length -
+        a.querySelectorAll(':scope > p, :scope > figure, :scope img').length
+    )[0];
+  }
+
+  /**
    * ページ全体から記事データを抽出するエントリポイント。
    * @returns {null | object}
    */
@@ -393,6 +469,32 @@
 
     const images = [];
     const blocks = extractBlocks(result.content || '', images);
+    const seen = new Set(images.map((im) => im.url));
+
+    // --- アイキャッチ(og:image)を先頭画像として追加 ---
+    const lead = getLeadImageUrl();
+    if (lead && !seen.has(lead) && !isNoiseImage({ getAttribute: () => null }, lead)) {
+      seen.add(lead);
+      images.unshift({ id: lead, url: lead, alt: '' });
+      // blocks の全 imageIndex を +1 ずらし、先頭に画像ブロックを差し込む
+      for (const b of blocks) {
+        if (b.type === 'image') b.imageIndex += 1;
+      }
+      blocks.unshift({ type: 'image', imageIndex: 0 });
+    }
+
+    // --- 本文画像の補完: Readabilityが本文画像をほとんど拾えなかった場合、
+    //     元DOMの本文コンテナから有効画像を末尾に補う（順序は完全一致しない） ---
+    const bodyImageCount = images.length - (lead ? 1 : 0);
+    if (bodyImageCount < 1) {
+      const container = findContentContainer();
+      if (container) {
+        for (const img of container.querySelectorAll('img')) {
+          const idx = pushImage(img, images, seen);
+          if (idx != null) blocks.push({ type: 'image', imageIndex: idx });
+        }
+      }
+    }
 
     // ハンドル: ページ著者が取れなければ空
     const handle = '';
